@@ -1,1 +1,188 @@
-<p>purchase-bill works!</p>
+<div class="page-container">
+
+  <header class="page-header">
+    <div>
+      <h1>Purchase Bill</h1>
+      <p>Manage your purchase items</p>
+    </div>
+
+    <button class="logout-btn" (click)="logout()">
+      Logout
+    </button>
+  </header>
+
+  <section class="form-card">
+    <h2>Add Purchase Item</h2>
+
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label for="item">Item</label>
+        <input
+          id="item"
+          type="text"
+          list="itemList"
+          [(ngModel)]="itemName"
+          placeholder="Search item..."
+        />
+
+        <datalist id="itemList">
+          <option *ngFor="let item of itemNames" [value]="item">
+          </option>
+        </datalist>
+      </div>
+
+      <div class="form-group">
+        <label for="batch">Batch / Location</label>
+        <select
+          id="batch"
+          [(ngModel)]="batchCode"
+          [disabled]="isLoadingLocations"
+        >
+          <option value="">Select Batch</option>
+
+          <option
+            *ngFor="let location of locations"
+            [value]="location.location_Code"
+          >
+            {{ location.location_Name }}
+          </option>
+        </select>
+
+        <small *ngIf="isLoadingLocations">
+          Loading locations...
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="cost">Standard Cost</label>
+        <input
+          id="cost"
+          type="number"
+          min="0"
+          [(ngModel)]="standardCost"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="price">Standard Price</label>
+        <input
+          id="price"
+          type="number"
+          min="0"
+          [(ngModel)]="standardPrice"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="quantity">Quantity</label>
+        <input
+          id="quantity"
+          type="number"
+          min="1"
+          [(ngModel)]="quantity"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="discount">Discount (%)</label>
+        <input
+          id="discount"
+          type="number"
+          min="0"
+          max="100"
+          [(ngModel)]="discount"
+        />
+      </div>
+
+    </div>
+
+    <div class="calculation-preview">
+      <div>
+        <span>Total Cost</span>
+        <strong>{{ totalCost | number:'1.2-2' }}</strong>
+      </div>
+
+      <div>
+        <span>Total Selling</span>
+        <strong>{{ totalSelling | number:'1.2-2' }}</strong>
+      </div>
+    </div>
+
+    <p class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </p>
+
+    <button class="add-btn" (click)="addItem()">
+      + Add Item
+    </button>
+  </section>
+
+  <section class="table-card">
+    <h2>Purchase Items</h2>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Batch</th>
+            <th>Cost</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th>Discount</th>
+            <th>Total Cost</th>
+            <th>Total Selling</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of purchaseItems; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ item.itemName }}</td>
+            <td>{{ item.batchName }}</td>
+            <td>{{ item.standardCost | number:'1.2-2' }}</td>
+            <td>{{ item.standardPrice | number:'1.2-2' }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.discount }}%</td>
+            <td>{{ item.totalCost | number:'1.2-2' }}</td>
+            <td>{{ item.totalSelling | number:'1.2-2' }}</td>
+            <td>
+              <button
+                class="remove-btn"
+                (click)="removeItem(i)"
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="purchaseItems.length === 0">
+            <td colspan="10" class="empty-message">
+              No purchase items added yet.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="summary-card">
+    <h2>Item Summary</h2>
+
+    <div class="summary-grid">
+      <div>
+        <span>Total Items</span>
+        <strong>{{ totalItems }}</strong>
+      </div>
+
+      <div>
+        <span>Total Quantity</span>
+        <strong>{{ totalQuantity }}</strong>
+      </div>
+    </div>
+  </section>
+
+</div>
