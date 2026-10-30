@@ -1,0 +1,37 @@
+<div class="login-page">
+  <div class="login-card">
+    <h1>Enhanzer</h1>
+    <p class="subtitle">Purchase Bill Management</p>
+
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+      <label for="email">Email Address</label>
+      <input
+        id="email"
+        type="email"
+        name="email"
+        [(ngModel)]="email"
+        required
+        email
+        placeholder="Enter your email"
+      />
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        name="password"
+        [(ngModel)]="password"
+        required
+        placeholder="Enter your password"
+      />
+
+      <p class="error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </p>
+
+      <button type="submit" [disabled]="isLoading || loginForm.invalid">
+        {{ isLoading ? 'Signing in...' : 'Sign In' }}
+      </button>
+    </form>
+  </div>
+</div>

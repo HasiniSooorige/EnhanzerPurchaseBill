@@ -5,6 +5,9 @@ using EnhanzerPurchaseBill.Api.DTOs;
 using EnhanzerPurchaseBill.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EnhanzerPurchaseBill.Api.Controllers;
 
@@ -14,13 +17,16 @@ public class AuthController : ControllerBase
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
     public AuthController(
         IHttpClientFactory httpClientFactory,
-        AppDbContext context)
+        AppDbContext context,
+        IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory;
         _context = context;
+        _configuration = configuration;
     }
 
     [HttpPost("login")]
@@ -127,19 +133,14 @@ public class AuthController : ControllerBase
 
             await _context.SaveChangesAsync(cancellationToken);
 
+            var accessToken = GenerateJwtToken(request.Email);
+
             return Ok(new
             {
                 message = "Login successful.",
-                user = new
-                {
-                    displayName = user.TryGetProperty(
-                        "User_Display_Name", out var displayName)
-                        ? displayName.GetString()
-                        : null,
-                    email = user.TryGetProperty("Email", out var email)
-                        ? email.GetString()
-                        : null
-                },
+                accessToken,
+                tokenType = "Bearer",
+                expiresIn = 1800,
                 locations = await _context.Locations
                     .AsNoTracking()
                     .Select(x => new
@@ -149,6 +150,30 @@ public class AuthController : ControllerBase
                     })
                     .ToListAsync(cancellationToken)
             });
+
+
+            //return Ok(new
+            //{
+            //    message = "Login successful.",
+            //    user = new
+            //    {
+            //        displayName = user.TryGetProperty(
+            //            "User_Display_Name", out var displayName)
+            //            ? displayName.GetString()
+            //            : null,
+            //        email = user.TryGetProperty("Email", out var email)
+            //            ? email.GetString()
+            //            : null
+            //    },
+            //    locations = await _context.Locations
+            //        .AsNoTracking()
+            //        .Select(x => new
+            //        {
+            //            x.Location_Code,
+            //            x.Location_Name
+            //        })
+            //        .ToListAsync(cancellationToken)
+            //});
         }
         catch (HttpRequestException)
         {
@@ -162,6 +187,35 @@ public class AuthController : ControllerBase
                 StatusCodes.Status502BadGateway,
                 new { message = "The external login service returned an invalid response." });
         }
+    }
+
+    private string GenerateJwtToken(string email)
+    {
+        var jwt = _configuration.GetSection("Jwt");
+
+        var key = Convert.FromBase64String(
+            _configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException(
+                "JWT signing key is not configured."));
+
+        var claims = new[]
+        {
+        new Claim(ClaimTypes.Name, email),
+        new Claim(ClaimTypes.Email, email)
+    };
+
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(key),
+            SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: jwt["Issuer"],
+            audience: jwt["Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(30),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     private IActionResult BadGatewayResponse()
