@@ -1,4 +1,9 @@
-import { Component, inject } from '@angular/core';
+
+import {
+  Component,
+  inject,
+  ChangeDetectorRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,32 +19,73 @@ import { Auth } from '../../services/auth';
 export class Login {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   email = '';
   password = '';
   errorMessage = '';
   isLoading = false;
+  showPassword = false;
 
   onLogin(): void {
-    if (!this.email.trim() || !this.password) {
-      this.errorMessage = 'Please enter your email and password.';
+    if (this.isLoading) {
+      return;
+    }
+
+    const normalizedEmail = this.email.trim();
+
+    if (!normalizedEmail || !this.password) {
+      this.errorMessage =
+        'Please enter your email address and password.';
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(normalizedEmail)) {
+      this.errorMessage = 'Please enter a valid email address.';
       return;
     }
 
     this.isLoading = true;
     this.errorMessage = '';
+    this.cdr.detectChanges();
 
-    this.auth.login(this.email.trim(), this.password).subscribe({
+    this.auth.login(normalizedEmail, this.password).subscribe({
       next: () => {
         this.isLoading = false;
+        this.cdr.detectChanges();
+
         void this.router.navigate(['/purchase-bill']);
       },
+
       error: error => {
+        console.error('Login error:', error);
+
         this.isLoading = false;
-        this.errorMessage =
-          error.error?.message ??
-          'Login failed. Please check your credentials and try again.';
+
+        if (error.status === 401) {
+          this.errorMessage =
+            error.error?.message ||
+            'Invalid email or password. Please try again.';
+        } else if (error.status === 0) {
+          this.errorMessage =
+            'Unable to connect to the server. Please check your connection.';
+        } else if (error.status >= 500) {
+          this.errorMessage =
+            'Login service is temporarily unavailable. Please try again later.';
+        } else {
+          this.errorMessage =
+            error.error?.message || 'Login failed. Please try again.';
+        }
+
+        // Refresh the Angular UI after the API response.
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }

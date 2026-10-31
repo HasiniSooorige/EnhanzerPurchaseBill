@@ -118,56 +118,66 @@
     </button>
   </section>
 
-  <section class="table-card">
-    <h2>Purchase Items</h2>
+<section class="table-card">
+  <h2>Purchase Items</h2>
 
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Item</th>
-            <th>Batch</th>
-            <th>Cost</th>
-            <th>Price</th>
-            <th>Qty</th>
-            <th>Discount</th>
-            <th>Total Cost</th>
-            <th>Total Selling</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Batch</th>
+          <th>Cost</th>
+          <th>Price</th>
+          <th>Qty</th>
+          <th>Discount</th>
+          <th>Total Cost</th>
+          <th>Total Selling</th>
+          <th>Action</th>
+        </tr>
+      </thead>
 
-        <tbody>
-          <tr *ngFor="let item of purchaseItems; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ item.itemName }}</td>
-            <td>{{ item.batchName }}</td>
-            <td>{{ item.standardCost | number:'1.2-2' }}</td>
-            <td>{{ item.standardPrice | number:'1.2-2' }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ item.discount }}%</td>
-            <td>{{ item.totalCost | number:'1.2-2' }}</td>
-            <td>{{ item.totalSelling | number:'1.2-2' }}</td>
-            <td>
-              <button
-                class="remove-btn"
-                (click)="removeItem(i)"
-              >
-                Remove
-              </button>
-            </td>
-          </tr>
+      <tbody>
+        <tr *ngFor="let item of purchaseItems; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.itemName }}</td>
+          <td>{{ item.batchName }}</td>
+          <td>{{ item.standardCost | number:'1.2-2' }}</td>
+          <td>{{ item.standardPrice | number:'1.2-2' }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>{{ item.discount }}%</td>
+          <td>{{ item.totalCost | number:'1.2-2' }}</td>
+          <td>{{ item.totalSelling | number:'1.2-2' }}</td>
+          <td>
+            <button class="remove-btn" (click)="removeItem(i)">
+              Remove
+            </button>
+          </td>
+        </tr>
 
-          <tr *ngIf="purchaseItems.length === 0">
-            <td colspan="10" class="empty-message">
-              No purchase items added yet.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+        <tr *ngIf="purchaseItems.length === 0">
+          <td colspan="10" class="empty-message">
+            No purchase items added yet.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+
+<button
+  type="button"
+  class="save-btn"
+  (click)="saveBill()"
+  [disabled]="isSaving || purchaseItems.length === 0"
+>
+  {{ isSaving ? 'Saving...' : 'Save Purchase Bill' }}
+</button>
+</section>
 
   <section class="summary-card">
     <h2>Item Summary</h2>
@@ -184,5 +194,7 @@
       </div>
     </div>
   </section>
+
+
 
 </div>

@@ -128,12 +128,6 @@ h2 {
   color: #b91c1c;
 }
 
-.error-message {
-  color: #dc2626;
-  font-size: 14px;
-  margin-bottom: 0;
-}
-
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -183,6 +177,48 @@ th {
   color: #1d4ed8;
 }
 
+.success-message {
+  color: #15803d;
+  background: #dcfce7;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+
+
+.error-message {
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.save-btn {
+  margin-top: 16px;
+  padding: 11px 22px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.save-btn:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 @media (max-width: 768px) {
   .page-container {
     padding: 15px;
@@ -200,3 +236,4 @@ th {
     gap: 25px;
   }
 }
+

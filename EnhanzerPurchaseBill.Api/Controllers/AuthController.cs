@@ -101,6 +101,17 @@ public class AuthController : ControllerBase
                 return BadGatewayResponse();
             }
 
+            var existingLocations = await _context.Locations
+                .ToListAsync(cancellationToken);
+
+            var locationsByCode = existingLocations
+                .GroupBy(x => x.Location_Code)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.First(),
+                    StringComparer.OrdinalIgnoreCase
+                );
+
             foreach (var item in locations.EnumerateArray())
             {
                 var code = item.GetProperty("Location_Code").GetString();
@@ -112,22 +123,20 @@ public class AuthController : ControllerBase
                     continue;
                 }
 
-                var existing = await _context.Locations
-                    .FirstOrDefaultAsync(
-                        x => x.Location_Code == code,
-                        cancellationToken);
-
-                if (existing is null)
+                if (locationsByCode.TryGetValue(code, out var existing))
                 {
-                    _context.Locations.Add(new Location
-                    {
-                        Location_Code = code,
-                        Location_Name = name
-                    });
+                    existing.Location_Name = name;
                 }
                 else
                 {
-                    existing.Location_Name = name;
+                    var newLocation = new Location
+                    {
+                        Location_Code = code,
+                        Location_Name = name
+                    };
+
+                    _context.Locations.Add(newLocation);
+                    locationsByCode.Add(code, newLocation);
                 }
             }
 

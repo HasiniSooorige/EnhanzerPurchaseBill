@@ -1,7 +1,16 @@
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  ChangeDetectorRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Auth, Location } from '../../services/auth';
+import {
+  Auth,
+  Location,
+  PurchaseBillSubmissionItem
+} from '../../services/auth';
 
 interface PurchaseItem {
   itemName: string;
@@ -24,6 +33,7 @@ interface PurchaseItem {
 })
 export class PurchaseBill implements OnInit {
   private readonly auth = inject(Auth);
+private readonly cdr = inject(ChangeDetectorRef);
 
   readonly itemNames: string[] = [
     'Mango',
@@ -40,13 +50,17 @@ export class PurchaseBill implements OnInit {
 
   itemName = '';
   batchCode = '';
-  standardCost = 100;
-  standardPrice = 150;
-  quantity = 1;
-  discount = 20;
+
+  standardCost: number | null = null;
+standardPrice: number | null = null;
+quantity: number | null = null;
+discount = 0;
 
   isLoadingLocations = false;
+  isSaving = false;
+
   errorMessage = '';
+  successMessage = '';
 
   ngOnInit(): void {
     this.loadLocations();
@@ -68,22 +82,40 @@ export class PurchaseBill implements OnInit {
           this.errorMessage = 'Session expired. Please login again.';
           this.auth.logout();
         } else {
-          this.errorMessage = 'Unable to load locations. Please try again.';
+          this.errorMessage =
+            'Unable to load locations. Please try again.';
         }
       }
     });
   }
 
-  get totalCost(): number {
-    const grossCost = this.standardCost * this.quantity;
-    const discountAmount = grossCost * (this.discount / 100);
-
-    return grossCost - discountAmount;
+get totalCost(): number {
+  if (
+    this.standardCost === null ||
+    this.quantity === null ||
+    this.standardCost < 0 ||
+    this.quantity <= 0 ||
+    this.discount < 0 ||
+    this.discount > 100
+  ) {
+    return 0;
   }
 
-  get totalSelling(): number {
-    return this.standardPrice * this.quantity;
+  return this.standardCost * this.quantity * (1 - this.discount / 100);
+}
+
+get totalSelling(): number {
+  if (
+    this.standardPrice === null ||
+    this.quantity === null ||
+    this.standardPrice < 0 ||
+    this.quantity <= 0
+  ) {
+    return 0;
   }
+
+  return this.standardPrice * this.quantity;
+}
 
   get totalItems(): number {
     return this.purchaseItems.length;
@@ -98,6 +130,7 @@ export class PurchaseBill implements OnInit {
 
   addItem(): void {
     const selectedItem = this.itemName.trim();
+
     const selectedLocation = this.locations.find(
       location => location.location_Code === this.batchCode
     );
@@ -112,16 +145,25 @@ export class PurchaseBill implements OnInit {
       return;
     }
 
-    if (
-      this.standardCost < 0 ||
-      this.standardPrice < 0 ||
-      this.quantity <= 0 ||
-      this.discount < 0 ||
-      this.discount > 100
-    ) {
-      this.errorMessage = 'Please enter valid cost, price, quantity and discount values.';
-      return;
-    }
+if (
+  this.standardCost === null ||
+  this.standardPrice === null ||
+  this.quantity === null ||
+  !Number.isFinite(this.standardCost) ||
+  !Number.isFinite(this.standardPrice) ||
+  !Number.isFinite(this.quantity) ||
+  !Number.isFinite(this.discount) ||
+  this.standardCost < 0 ||
+  this.standardPrice < 0 ||
+  this.quantity <= 0 ||
+  !Number.isInteger(this.quantity) ||
+  this.discount < 0 ||
+  this.discount > 100
+) {
+  this.errorMessage =
+    'Please enter valid cost, price, quantity and discount values.';
+  return;
+}
 
     const purchaseItem: PurchaseItem = {
       itemName: selectedItem,
@@ -138,24 +180,89 @@ export class PurchaseBill implements OnInit {
     this.purchaseItems.push(purchaseItem);
 
     this.errorMessage = '';
+    this.successMessage = '';
+
     this.resetForm();
   }
 
   removeItem(index: number): void {
     this.purchaseItems.splice(index, 1);
+    this.successMessage = '';
   }
 
-  resetForm(): void {
-    this.itemName = '';
-    this.batchCode = '';
-    this.standardCost = 100;
-    this.standardPrice = 150;
-    this.quantity = 1;
-    this.discount = 0;
+
+saveBill(): void {
+  if (this.purchaseItems.length === 0 || this.isSaving) {
+    return;
   }
 
-  logout(): void {
-    this.auth.logout();
-    window.location.href = '/login';
-  }
+  this.isSaving = true;
+  this.errorMessage = '';
+  this.successMessage = '';
+
+  const items: PurchaseBillSubmissionItem[] =
+    this.purchaseItems.map(item => ({
+      itemName: item.itemName,
+      batchCode: item.batchCode,
+      standardCost: item.standardCost,
+      standardPrice: item.standardPrice,
+      quantity: item.quantity,
+      discount: item.discount
+    }));
+
+  this.auth.savePurchaseBill(items).subscribe({
+    next: response => {
+      console.log('SAVE SUCCESS:', response);
+
+      this.isSaving = false;
+this.successMessage =
+  `${response.message}`;
+
+this.purchaseItems = [];
+this.resetForm();
+
+this.cdr.detectChanges();
+
+setTimeout(() => {
+  this.successMessage = '';
+  this.cdr.detectChanges();
+}, 5000);
+    },
+
+    error: error => {
+      console.error('SAVE ERROR:', error);
+
+      this.isSaving = false;
+
+      if (error.status === 401) {
+        this.errorMessage =
+          'Session expired. Please login again.';
+        this.auth.logout();
+      } else {
+        this.errorMessage =
+          error.error?.message ||
+          'Unable to save purchase bill. Please try again.';
+      }
+
+      this.cdr.detectChanges();
+    }
+  });
+}
+
+
+resetForm(): void {
+  this.itemName = '';
+  this.batchCode = '';
+  this.standardCost = null;
+  this.standardPrice = null;
+  this.quantity = null;
+  this.discount = 0;
+}
+
+
+logout(): void {
+  this.auth.logout();
+  window.location.href = '/login';
+}
+
 }
