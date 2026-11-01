@@ -1,39 +1,59 @@
+
 <div class="page-container">
 
+  <!-- Page Header -->
   <header class="page-header">
+
     <div>
       <h1>Purchase Bill</h1>
       <p>Manage your purchase items</p>
     </div>
 
-    <button class="logout-btn" (click)="logout()">
+    <button
+      type="button"
+      class="logout-btn"
+      (click)="logout()"
+    >
       Logout
     </button>
+
   </header>
 
+  <!-- Add Purchase Item Form -->
   <section class="form-card">
+
     <h2>Add Purchase Item</h2>
 
     <div class="form-grid">
 
+      <!-- Item Selection -->
       <div class="form-group">
+
         <label for="item">Item</label>
+
         <input
           id="item"
           type="text"
           list="itemList"
           [(ngModel)]="itemName"
           placeholder="Search item..."
+          autocomplete="off"
         />
 
         <datalist id="itemList">
-          <option *ngFor="let item of itemNames" [value]="item">
-          </option>
+          <option
+            *ngFor="let item of itemNames"
+            [value]="item"
+          ></option>
         </datalist>
+
       </div>
 
+      <!-- Batch / Location -->
       <div class="form-group">
+
         <label for="batch">Batch / Location</label>
+
         <select
           id="batch"
           [(ngModel)]="batchCode"
@@ -47,57 +67,81 @@
           >
             {{ location.location_Name }}
           </option>
+
         </select>
 
         <small *ngIf="isLoadingLocations">
           Loading locations...
         </small>
+
       </div>
 
+      <!-- Standard Cost -->
       <div class="form-group">
+
         <label for="cost">Standard Cost</label>
+
         <input
           id="cost"
           type="number"
           min="0"
+          step="0.01"
           [(ngModel)]="standardCost"
         />
+
       </div>
 
+      <!-- Standard Price -->
       <div class="form-group">
+
         <label for="price">Standard Price</label>
+
         <input
           id="price"
           type="number"
           min="0"
+          step="0.01"
           [(ngModel)]="standardPrice"
         />
+
       </div>
 
+      <!-- Quantity -->
       <div class="form-group">
+
         <label for="quantity">Quantity</label>
+
         <input
           id="quantity"
           type="number"
           min="1"
+          step="1"
           [(ngModel)]="quantity"
         />
+
       </div>
 
+      <!-- Discount -->
       <div class="form-group">
+
         <label for="discount">Discount (%)</label>
+
         <input
           id="discount"
           type="number"
           min="0"
           max="100"
+          step="0.01"
           [(ngModel)]="discount"
         />
+
       </div>
 
     </div>
 
+    <!-- Calculation Preview -->
     <div class="calculation-preview">
+
       <div>
         <span>Total Cost</span>
         <strong>{{ totalCost | number:'1.2-2' }}</strong>
@@ -107,82 +151,113 @@
         <span>Total Selling</span>
         <strong>{{ totalSelling | number:'1.2-2' }}</strong>
       </div>
+
     </div>
 
-    <p class="error-message" *ngIf="errorMessage">
-      {{ errorMessage }}
-    </p>
+    <!-- Reusable Error Message -->
+    <app-alert-message
+      [message]="errorMessage"
+      type="error"
+    />
 
-    <button class="add-btn" (click)="addItem()">
+    <!-- Add Item Button -->
+    <button
+      type="button"
+      class="add-btn"
+      (click)="addItem()"
+    >
       + Add Item
     </button>
+
   </section>
 
-<section class="table-card">
-  <h2>Purchase Items</h2>
+  <!-- Purchase Items Table -->
+  <section class="table-card">
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Item</th>
-          <th>Batch</th>
-          <th>Cost</th>
-          <th>Price</th>
-          <th>Qty</th>
-          <th>Discount</th>
-          <th>Total Cost</th>
-          <th>Total Selling</th>
-          <th>Action</th>
-        </tr>
-      </thead>
+    <h2>Purchase Items</h2>
 
-      <tbody>
-        <tr *ngFor="let item of purchaseItems; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ item.itemName }}</td>
-          <td>{{ item.batchName }}</td>
-          <td>{{ item.standardCost | number:'1.2-2' }}</td>
-          <td>{{ item.standardPrice | number:'1.2-2' }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>{{ item.discount }}%</td>
-          <td>{{ item.totalCost | number:'1.2-2' }}</td>
-          <td>{{ item.totalSelling | number:'1.2-2' }}</td>
-          <td>
-            <button class="remove-btn" (click)="removeItem(i)">
-              Remove
-            </button>
-          </td>
-        </tr>
+    <div class="table-wrapper">
 
-        <tr *ngIf="purchaseItems.length === 0">
-          <td colspan="10" class="empty-message">
-            No purchase items added yet.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+      <table>
 
-  <div *ngIf="successMessage" class="success-message">
-    {{ successMessage }}
-  </div>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Batch</th>
+            <th>Cost</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th>Discount</th>
+            <th>Total Cost</th>
+            <th>Total Selling</th>
+            <th>Action</th>
+          </tr>
+        </thead>
 
-<button
-  type="button"
-  class="save-btn"
-  (click)="saveBill()"
-  [disabled]="isSaving || purchaseItems.length === 0"
->
-  {{ isSaving ? 'Saving...' : 'Save Purchase Bill' }}
-</button>
-</section>
+        <tbody>
 
+          <tr
+            *ngFor="let item of purchaseItems; let i = index"
+          >
+            <td>{{ i + 1 }}</td>
+            <td>{{ item.itemName }}</td>
+            <td>{{ item.batchName }}</td>
+            <td>{{ item.standardCost | number:'1.2-2' }}</td>
+            <td>{{ item.standardPrice | number:'1.2-2' }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.discount }}%</td>
+            <td>{{ item.totalCost | number:'1.2-2' }}</td>
+            <td>{{ item.totalSelling | number:'1.2-2' }}</td>
+
+            <td>
+              <button
+                type="button"
+                class="remove-btn"
+                (click)="removeItem(i)"
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="purchaseItems.length === 0">
+            <td colspan="10" class="empty-message">
+              No purchase items added yet.
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <!-- Reusable Success Message -->
+    <app-alert-message
+      [message]="successMessage"
+      type="success"
+    />
+
+    <!-- Save Purchase Bill Button -->
+    <button
+      type="button"
+      class="save-btn"
+      (click)="saveBill()"
+      [disabled]="isSaving || purchaseItems.length === 0"
+    >
+      {{ isSaving ? 'Saving...' : 'Save Purchase Bill' }}
+    </button>
+
+  </section>
+
+  <!-- Item Summary -->
   <section class="summary-card">
+
     <h2>Item Summary</h2>
 
     <div class="summary-grid">
+
       <div>
         <span>Total Items</span>
         <strong>{{ totalItems }}</strong>
@@ -192,9 +267,9 @@
         <span>Total Quantity</span>
         <strong>{{ totalQuantity }}</strong>
       </div>
+
     </div>
+
   </section>
-
-
 
 </div>
